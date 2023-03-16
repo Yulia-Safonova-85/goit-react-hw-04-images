@@ -16,7 +16,6 @@ export class App extends Component {
     searchName: '',
     images: [],
     page: 1,
-    totalHits: null,
     error: null,
     status: 'idle',
     isLoading: false,
@@ -63,7 +62,7 @@ export class App extends Component {
       } else {
         this.setState(prevState => ({
           images: [...prevState.images, ...hits],
-          status: 'resolved', 
+          status: 'resolved', loadMore: true,
       }))
       }
     } catch (error) {
@@ -75,7 +74,7 @@ export class App extends Component {
 
 
   render() {
-    const {  error, images, page, totalHits, status, largeImageURL, loadMore, showModal } = this.state;
+    const {  error, images, page,  status, largeImageURL, loadMore, showModal } = this.state;
     
     if (status === 'pending') {
       return <Loader />;
@@ -89,7 +88,7 @@ export class App extends Component {
         <Searchbar onSubmit={this.handleFormSubmit} />
         <ImageGallery items={images} openModal ={this.openModal} />
 
-        {totalHits >=12  && images.length >= 12 && <Button onLoadMore={this.onLoadMore} page={page} />} 
+        {loadMore && <Button onLoadMore={this.onLoadMore} page={page} />} 
 
         {showModal && <Modal largeImageURL={largeImageURL} onClose={this.closeModal} />}
         
