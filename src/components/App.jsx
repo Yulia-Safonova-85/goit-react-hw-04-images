@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'styles.css';
 import { fetchApiSearch } from 'services/fetchApi';
@@ -11,86 +11,76 @@ import { Modal } from './Modal/Modal';
 
 
 
-export class App extends Component {
-  state = {
-    searchName: '',
-    images: [],
-    page: 1,
-    error: null,
-    status: 'idle',
-    isLoading: false,
-    loadMore: false,
-    showModal: false,
+export const App =()=> {
+const [searchName, setSearchName] = useState('');
+const [images, setImages] = useState([]);
+const [page, setPage] = useState(1);
+const [error, setError] = useState(null);
+const [isLoading, setIsLoading] = useState(false);
+const [loadMore, setLoadMore] = useState(false);
+const [showModal, setShowModal] = useState(false);
+const [largeImageURL, setLargeImageURL]= useState('');
+const per_page = 12;
 
+  const handleFormSubmit = searchName => {
+    setSearchName(searchName);
+    setPage(1);
+    setImages([]);
+   setLoadMore(false);
   }
 
-  handleFormSubmit = searchName => {
-    this.setState({ searchName, page: 1, images: [], loaadMore: false, });
-  }
-
-  onLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }))
+   const onLoadMore = () => {
+    setIsLoading(true);
+    setPage(prevPage => prevPage + 1 );
     
   };
 
-  openModal = largeImageURL => {
-    this.setState({ showModal: true, largeImageURL: largeImageURL })
+  const openModal = largeImageURL => {
+    setShowModal( true);
+    setLargeImageURL(largeImageURL);
   };
 
-  closeModal = () => {
-    this.setState({ showModal: false })
+  const closeModal = () => {
+    setShowModal(false);
   };
 
-
-  componentDidUpdate(prevProps, prevState) {
-
-    const { searchName, page } = this.state;
-    if (prevState.searchName !== searchName || prevState.page !== page) {
-      this.getImages(searchName, page)
-    }
-  }
-  getImages = async (querry, page) => {
-    this.setState({ isLoading: true })
+useEffect(() => {
+const getImages = async (querry, page) => {
+    setIsLoading (true);
     if (!querry) {
       return;
     }
     try {
       const { hits, totalHits } = await fetchApiSearch(querry, page);
       if (totalHits === 0) {
-        this.setState({ status: 'idle' });
-        return alert(`Sorry, there is no images.Please, try again!`);
-      } else {
-        this.setState(prevState => ({
-          images: [...prevState.images, ...hits],
-          status: 'resolved', loadMore: true,
-      }))
-      }
+    return alert(`Sorry, there is no images.Please, try again!`);
+      } 
+        setImages(prevImages => [ ...prevImages, ...hits]);
+        setLoadMore(page < Math.ceil(totalHits / per_page));
+      
     } catch (error) {
-      this.setState({ error: error.message });
+      setError( `Ooops... Something wrong. please try again!`);
     } finally {
-      this.setState({ loading: false });
+      setIsLoading(false);
     }
-  }
+  };
 
+  getImages(searchName, page)
+  
+}, [searchName,page]);
 
-  render() {
-    const {  error, images, page,  status, largeImageURL, loadMore, showModal } = this.state;
-    
-    if (status === 'pending') {
-      return <Loader />;
-      }
+ 
 
-    if (status === 'rejected') {
-      return <h1>{error.message}</h1>
-    }
     return (
       <div className='App'>
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        <ImageGallery items={images} openModal ={this.openModal} />
+        <Searchbar onSubmit={handleFormSubmit} />
+        
+        {isLoading ? (<Loader/>) : (<ImageGallery items={images} openModal ={openModal} />) }
+        {error && <h2> {error}</h2>}
 
-        {loadMore && <Button onLoadMore={this.onLoadMore} page={page} />} 
+        {loadMore && <Button onLoadMore={onLoadMore} page={page} />} 
 
-        {showModal && <Modal largeImageURL={largeImageURL} onClose={this.closeModal} />}
+        {showModal && <Modal largeImageURL={largeImageURL} onClose={closeModal} />}
         
         <ToastContainer position="top-right"
           autoClose={3000}
@@ -107,6 +97,6 @@ export class App extends Component {
       </div>)
 
   };
-};
+
 
 
